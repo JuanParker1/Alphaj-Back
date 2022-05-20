@@ -6,6 +6,8 @@ const ExchangeAccountSchema = new Schema(
             type: String,
             enum: ["Bitso", "FTX"],
         },
+        name: String,
+        subAcc: String,
         apiKey: String,
         apiSecret: String,
         owner: {
