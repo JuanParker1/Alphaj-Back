@@ -1,6 +1,6 @@
 const {Schema, model} = require("mongoose")
 
-const TradeSchema = new Schema(
+const OrderSchema = new Schema(
     {
         symbol: {
             type: String
@@ -19,28 +19,23 @@ const TradeSchema = new Schema(
         },
         side: {
             type: String,
-            enum: ["long", "short"]
+            enum: ["long, short", "buy", "sell"]
         },
         contracts: Number,
-        avgEntry: Number,
-        avgExit: Number,
+        avgPriceOrder: Number,
         cost: Number,
-        profit: Number,
-        orders: {
+        trade: {
             type: Schema.Types.ObjectId, 
-            ref: 'Order'            
+            ref: 'Trade'            
         },
-        entryDate: { type: Date, default: Date.now },
-        exitDate: { type: Date, default: Date.now },
-        length: Number,
-        Fees: Number,
+        orderId: String,
+        date: { type: Date, default: Date.now },
+        fees: Number,
         funding: Number,
-        profit: Number,
         strategies: [{
             type: Schema.Types.ObjectId, 
             ref: 'Strategy'    
         }]
-
     },
     {
       // this second object adds extra properties: `createdAt` and `updatedAt`
@@ -48,6 +43,6 @@ const TradeSchema = new Schema(
     }
 )
 
-const Trade = model("Trade", TradeSchema)
+const Order = model("Order", OrderSchema)
 
-module.exports = Trade
+module.exports = Order

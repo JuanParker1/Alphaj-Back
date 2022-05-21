@@ -28,6 +28,10 @@ const userSchema = new Schema(
     strategies: [{
       type: Schema.Types.ObjectId,
       ref: 'Strategy'
+    }],
+    orders: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Order'
     }]
 
   },
