@@ -16,7 +16,11 @@ const ExchangeAccountSchema = new Schema(
         },
         trades: [{
             type: Schema.Types.ObjectId, 
-            ref: 'Trades'            
+            ref: 'Trade'            
+        }],
+        orders: [{
+            type: Schema.Types.ObjectId, 
+            ref: 'Order'            
         }]
     },
     {
@@ -25,6 +29,6 @@ const ExchangeAccountSchema = new Schema(
     }
 )
 
-const ExchangeAccountConnection = model("ExchangeConnection", ExchangeAccountSchema)
+const ExchangeAccountConnection = model("ExchangeAccountConnection", ExchangeAccountSchema)
 
 module.exports = ExchangeAccountConnection;

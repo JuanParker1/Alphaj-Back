@@ -11,7 +11,7 @@ const OrderSchema = new Schema(
         },
         account: {
             type: Schema.Types.ObjectId, 
-            ref: 'ExchangeAccountConnection'            
+            ref: 'ExchangeAccountConnection' 
         },
         type: {
             type: String,

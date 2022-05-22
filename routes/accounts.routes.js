@@ -31,7 +31,7 @@ router.post("/", isLoggedIn, (req, res, next)=>{
 
     ExchangeAccount.create({exchange, name, subAcc, apiKey, apiSecret, owner, trades: []})  //Session.user._id
     .then(async (newAccount) => {
-        User.findByIdAndUpdate(owner, { $push: {accounts: newAccount._id}})
+        await User.findByIdAndUpdate(owner, { $push: {accounts: newAccount._id}})
 
         //API call to Pull information from exchange
         switch (newAccount.exchange){
@@ -57,9 +57,9 @@ router.post("/", isLoggedIn, (req, res, next)=>{
                 })
                 console.log("orderlist:",orderList)
                 await Order.create(orderList)
-                    .then((order)=> {
+                    .then(async (order)=> {
                         console.log(order)
-                        User.findByIdAndUpdate(owner, { $push: {orders: order}})
+                        await User.findByIdAndUpdate(owner, { $push: {orders: order}})
                     })
                     .catch(err => console.log(err))
                 break;
