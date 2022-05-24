@@ -48,11 +48,10 @@ const createSignature = (nonce, method, reqPath, apiSecret, json_payload = {}) =
     return signature
 }
 
-module.exports = function getFTXData(key, secret, subAcc) {
-    let data = []
+module.exports = async function getFTXData(key, secret, subAcc) {
     const http_method = "GET";  // Change to POST if endpoint requires data
     const nonce = new Date().getTime();
-    const request_path = "/api/fills?start_time=1621371415&end_time=1652885815&limit=50"
+    const request_path = "/api/fills?start_time=1608788208&end_time=1652885815&order=asc&limit=50" //&limit=500
     
     const headers = (key, nonce, subAcc) =>{
         if (subAcc === undefined){
@@ -80,24 +79,28 @@ module.exports = function getFTXData(key, secret, subAcc) {
     };
 
 
-    axios(config)
+    const data = await axios(config)
         .then(response => {
             //console.log(response.data)
-            data = [...response.data.result]
+            const query = [...response.data.result]
             //console.log("group Trades: ", data)
 
-            const groupedData = groupBy(data, "orderId")
-            console.log("group Trades: ", groupedData)
+            const groupedData = groupBy(query, "orderId")
+            delete groupedData.null
+            //console.log("group Trades: ", groupedData)
 
-            const keys = Object.keys(groupedData)
-            console.log(keys)
+            const orderId = Object.keys(groupedData)
 
-            keys.forEach((elem) => {
+            const orders =  orderId.map((elem) => {
                 groupedData[elem][0]["size"] = calcAvgPrice(groupedData[elem])[0]
                 groupedData[elem][0]["price"] = calcAvgPrice(groupedData[elem])[1]
-                //console.log("trades:",groupedData[elem][0] ,calcAvgPrice(groupedData[elem]))
+                groupedData[elem][0]["cost"] = calcAvgPrice(groupedData[elem])[2]
+
+                return groupedData[elem][0]
             })
+            return orders
         })
         .catch(err => console.log(err))
 
+        return data
 }

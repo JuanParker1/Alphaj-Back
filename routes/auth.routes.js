@@ -80,7 +80,8 @@ router.post("/signup", isLoggedOut, (req, res) => {
           password: hashedPassword,
           accounts: [],
           trades: [],
-          strategies: []
+          strategies: [],
+          walletAddress: ""
         });
       })
       .then((user) => {
@@ -152,15 +153,34 @@ router.post("/login", isLoggedOut, (req, res, next) => {
     });
 });
 
+
 router.delete("/logout", isLoggedIn, (req, res) => {
   Session.findByIdAndDelete(req.headers.authorization)
-    .then(() => {
-      res.status(200).json({ message: "User was logged out" });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ errorMessage: err.message });
-    });
+  .then(() => {
+    res.status(200).json({ message: "User was logged out" });
+  })
+  .catch((err) => {
+    console.log(err);
+    res.status(500).json({ errorMessage: err.message });
+  });
 });
+
+router.put("/user/:userId", isLoggedIn, (req, res) => {
+  const {userId} = req.params
+  console.log("id",userId)
+
+  const {username, email, walletAddress} = req.body
+console.log("wallet",req.params)
+ User.findByIdAndUpdate(userId, {username, email, walletAddress}, { new: true })
+ .then((elem) => {
+   console.log(elem)
+  res.status(200).json({ message: "User updated successfully" });
+})
+ .catch((err) => {
+    console.log(err);
+    res.status(500).json({ errorMessage: err.message });
+})
+  
+})
 
 module.exports = router;

@@ -26,10 +26,10 @@ const TradeSchema = new Schema(
         avgExit: Number,
         cost: Number,
         profit: Number,
-        orders: {
+        orders: [{
             type: Schema.Types.ObjectId, 
             ref: 'Order'            
-        },
+        }],
         entryDate: { type: Date, default: Date.now },
         exitDate: { type: Date, default: Date.now },
         length: Number,
@@ -39,7 +39,11 @@ const TradeSchema = new Schema(
         strategies: [{
             type: Schema.Types.ObjectId, 
             ref: 'Strategy'    
-        }]
+        }],
+        status:{
+            type: String,
+            enum: ["open", "closed"]
+        }
 
     },
     {

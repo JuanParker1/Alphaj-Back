@@ -101,5 +101,3 @@ module.exports = async function getBitsoData(key, secret) {
 
     return data
 }
-
-//console.log(getBitsoData("pdxBXsibvL", "5a0de6f2532b87262baa2b61601be3a8"))
