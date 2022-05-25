@@ -35,7 +35,6 @@ const TradeSchema = new Schema(
         length: Number,
         Fees: Number,
         funding: Number,
-        profit: Number,
         strategies: [{
             type: Schema.Types.ObjectId, 
             ref: 'Strategy'    

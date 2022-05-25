@@ -16,6 +16,50 @@ const isLoggedIn = require("../middleware/isLoggedIn");
 const getBitsoData = require("../APIs/bitso_api")
 const getFtxData = require("../APIs/ftx_api")
 
+const calcAvgPrice = (arr) => {
+    /* 
+    Average Entry Price = Total number of contracts / Total contract value in BTC
+    Total contract value in BTC = [(Quantity A / Price A) + (Quantity B / Price B) + (Quantity C / Price C) ...]
+    */
+    //tnc = Total number of contracts
+    const tnc = arr.reduce((acc, cur) => {
+        return acc + cur["contracts"]
+    }, 0)
+
+    //Total contract value
+    const tcvArr = arr.map(elem => {
+        return elem["contracts"] / elem["avgPriceOrder"]
+    })
+
+    const tcv = tcvArr.reduce((acc, cur) => acc + cur, 0)
+
+    const AvgPrice = tnc / tcv
+    //return tnc, AvgPrice, Total cost
+    return [tnc, AvgPrice, tnc * AvgPrice]
+}
+
+const entryExitTrade = (obj) =>{
+    const longSide = obj["orders"].filter(elem=>elem.side === "buy" || elem.side === "long")
+    const shortSide = obj["orders"].filter(elem=>elem.side === "sell" || elem.side === "short")
+
+    if(obj.side === "long"){
+        const longPos = calcAvgPrice(longSide)
+        const shortPos = calcAvgPrice(shortSide)
+        obj.contracts = longPos[0]
+        obj.avgEntry = longPos[1]
+        obj.avgExit = shortPos[1]
+        obj.profit = shortPos[2] - longPos[2]
+    } else if(obj.side === "short"){
+        const longPos = calcAvgPrice(longSide)
+        const shortPos = calcAvgPrice(shortSide)
+        obj.contracts = shortPos[0]
+        obj.avgEntry = shortPos[1]
+        obj.avgExit = longPos[1]
+        obj.profit = longPos[2] -shortPos[2]
+    }
+    return obj
+}
+
 router.get("/", isLoggedIn, (req, res, next) => {
 
     const owner = req.user._id
@@ -38,7 +82,6 @@ router.post("/", isLoggedIn, (req, res, next) => {
             switch (newAccount.exchange) {
                 case "Bitso":
                     const bitsoData = await getBitsoData(newAccount.apiKey, newAccount.apiSecret)
-                    //console.log("apibitsoData:",bitsoData )
                     const bitsoOrderList = bitsoData.map((elem) => {
                         const symbol = `${elem.major_currency}/${elem.minor_currency}`
                         const user = owner
@@ -95,33 +138,46 @@ router.post("/", isLoggedIn, (req, res, next) => {
                     //Create Trade
                     Order.find({ account: newAccount }).sort({ date: 1 })
                         .then(async response => {
-                            console.log("after find")
-                            const openTrades = []
-                            //res.json(response)
+                            const openTrades = {}
+                            const closedTrades = []
+
                             response.map(async (elem) => {
-                                console.log("accountttt", newAccount, typeof newAccount)
+
                                 if (elem.type === "margin") {
-                                    if (!openTrades.includes(elem.symbol)) {
+                                    if (!Object.keys(openTrades).includes(elem.symbol)) {
                                         openTrades[elem.symbol] = { symbol: elem.symbol, user: owner, account: newAccount, type: elem.type, orders: [elem], contracts: elem.contracts, status: "open", entryDate: elem.date }
-                                    }
-                                    if (openTrades[elem.symbol]["status"] === "open") {
+                                        if (elem.side === "buy" || elem.side === "long") {
+                                            openTrades[elem.symbol]["side"] = "long"
+                                        } else if (elem.side === "sell" || elem.side === "short") {
+                                            openTrades[elem.symbol]["side"] = "short"
+                                        }
+                                        
+                                    } else if (Object.keys(openTrades).includes(elem.symbol) && openTrades[elem.symbol]["status"] === "open") {
                                         if (elem.side === "long" || elem.side === "buy") {
                                             openTrades[elem.symbol]["contracts"] += elem.contracts
-                                            openTrades[elem.symbol]["orders"].push(elem._id)
+                                            openTrades[elem.symbol]["orders"].push(elem)
                                         } else if (elem.side === "short" || elem.side === "sell") {
                                             openTrades[elem.symbol]["contracts"] -= elem.contracts
-                                            openTrades[elem.symbol]["orders"].push(elem._id)
-                                            if (openTrades[elem.symbol]["contracts"] <= 0) {
+                                            openTrades[elem.symbol]["orders"].push(elem)
+                                            if (openTrades[elem.symbol]["contracts"] === 0) {
                                                 openTrades[elem.symbol]["status"] = "closed"
-                                                openTrades[elem.symbol]["elem"] = elem.date
+                                                openTrades[elem.symbol]["exitDate"] = elem.date
+                                                entryExitTrade(openTrades[elem.symbol])
+
+                                                closedTrades.push(openTrades[elem.symbol])
+                                                delete openTrades[elem.symbol]
                                             }
+                                            
                                         }
                                     }
                                 }
+
                             })
-                            await Trade.create(Object.values(openTrades))
+
+                            await Trade.create(closedTrades)
                                 .then(async (trade) => await User.findByIdAndUpdate(owner, { $push: { trades: trade } }))
                                 .catch(err => console.log(err))
+
                         })
                         .catch(err => console.log(err))
 

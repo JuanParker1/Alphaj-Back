@@ -51,7 +51,7 @@ const createSignature = (nonce, method, reqPath, apiSecret, json_payload = {}) =
 module.exports = async function getFTXData(key, secret, subAcc) {
     const http_method = "GET";  // Change to POST if endpoint requires data
     const nonce = new Date().getTime();
-    const request_path = "/api/fills?start_time=1608788208&end_time=1652885815&order=asc&limit=50" //&limit=500
+    const request_path = "/api/fills?start_time=1608788208&end_time=1652885815&order=asc" //&limit=500  market=CAKE-PERP&
     
     const headers = (key, nonce, subAcc) =>{
         if (subAcc === undefined){
@@ -81,13 +81,11 @@ module.exports = async function getFTXData(key, secret, subAcc) {
 
     const data = await axios(config)
         .then(response => {
-            //console.log(response.data)
+
             const query = [...response.data.result]
-            //console.log("group Trades: ", data)
 
             const groupedData = groupBy(query, "orderId")
             delete groupedData.null
-            //console.log("group Trades: ", groupedData)
 
             const orderId = Object.keys(groupedData)
 
